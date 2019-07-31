@@ -14,9 +14,9 @@ const int debug = 0; // 1 = lists each patch applied
 // TEST 1 will operate on both 1MM.EXE and 3MM.EXE
 #define TEST 0
 
-typedef uint32_t uint32;
-typedef uint16_t uint16;
-typedef uint8_t uint8;
+typedef uint32_t     uint32;
+typedef uint16_t     uint16;
+typedef uint8_t      uint8;
 typedef unsigned int uint;
 
 // MM.EXE CRC32 to identify which file is present
@@ -24,19 +24,19 @@ const uint32 CRC_MM1 = 0xAEA06825;
 const uint32 CRC_MM3 = 0x06C09829;
 
 #if !TEST
-#define FILE_MM1 "MM.EXE"
-#define FILE_MM3 "MM.EXE"
+#define FILE_MM1    "MM.EXE"
+#define FILE_MM3    "MM.EXE"
 #else
-#define FILE_MM1 "1MM.EXE"
-#define FILE_MM3 "3MM.EXE"
+#define FILE_MM1    "1MM.EXE"
+#define FILE_MM3    "3MM.EXE"
 #endif
 
-#define FILE_CRC "MM.EXE"
-#define OUT_MM1 "MM1.EXE"
-#define OUT_MM3CGA "MM3CGA.EXE"
-#define OUT_MM3EGA "MM3EGA.EXE"
+#define FILE_CRC    "MM.EXE"
+#define OUT_MM1     "MM1.EXE"
+#define OUT_MM3CGA  "MM3CGA.EXE"
+#define OUT_MM3EGA  "MM3EGA.EXE"
 
-const uint8 default_speed = 3;
+#define default_speed   3
 
 typedef struct
 {
@@ -74,8 +74,9 @@ const uint8 six[] = { 6 };
 //
 
 // slowdown routine to delay a specified number of frames
-const uint mm1_slow_addr = 0x219A; // unused tandy video function 0 (+12 offset, 67 bytes until function 1)
-const uint mm1_slow_file = 0x1A08;
+// location: unused tandy video function 0 (+12 offset, 67 bytes until function 1)
+#define mm1_slow_addr   0x219A
+#define mm1_slow_file   0x1A08
 const uint8 mm1_slow[] = {
 	0x9C,                                 // pushf
 	0x50,                                 // push ax
@@ -103,8 +104,8 @@ const uint8 mm1_slow[] = {
 };
 // patch just before a joystick input poll to insert the delay,
 // replacing "cmp cs:1149h, 0" with a call.
-const uint mm1_slow0_addr = 0x5390;
-const uint mm1_slow0_file = 0x4BFE;
+#define mm1_slow0_addr   0x5390
+#define mm1_slow0_file   0x4BFE
 const uint8 mm1_slow0[] = { CALL(mm1_slow0_addr,mm1_slow_addr), 0x90, 0x90, 0x90 };
 // only the main game loop is patched, but several other input poll candidates were found,
 // searching for uses of cs:1149h which is the joystick setting flag:
@@ -121,8 +122,9 @@ const uint8 mm1_slow0[] = { CALL(mm1_slow0_addr,mm1_slow_addr), 0x90, 0x90, 0x90
 // 53EDh (4C5B)
 
 // text table for a revised setup menu
-const uint mm1_table_addr = 0x21DD; // unused tandy video function 1 (154 bytes until function 2)
-const uint mm1_table_file = 0x1A4B;
+// location: unused tandy video function 1 (154 bytes until function 2)
+#define mm1_table_addr   0x21DD
+#define mm1_table_file   0x1A4B
 const uint8 mm1_table[] = {
 	// table of strings for the slowdown setting
 	0x28,0x09,1,'0',
@@ -188,10 +190,12 @@ const uint8 mm1_table1[] = { WORD(mm1_table_addr+52+72) }; // 113Dh
 
 // a routine to copy the new settings table results into the original settings table
 // and otherwise finalize the new slowdown setting
-const uint mm1_settings_addr = 0x2277; // unused tandy video function 2 (+3 offset, max 96 bytes)
-const uint mm1_settings_file = 0x1AE5;
-const uint mm1_settings0_addr = 0x50AD; // original settings code location to redirect
-const uint mm1_settings0_file = 0x491B;
+// location: unused tandy video function 2 (+3 offset, max 96 bytes)
+#define mm1_settings_addr   0x2277
+#define mm1_settings_file   0x1AE5
+// original settings code location to redirect
+#define mm1_settings0_addr   0x50AD
+#define mm1_settings0_file   0x491B
 const uint8 mm1_settings[] = {
 	0x9C,                                     // pushf
 	0x50,                                     // push ax
@@ -229,12 +233,15 @@ const uint8 mm1_settings0[] = {
 
 // joystick reading replacement that works with a much wider range of computer speeds,
 // mostly based on relevant code from Mega Man 3
-const uint mm1_joy_addr = 0x23C0; // unused tandy video function 6 (+7 offset, max 314 bytes)
-const uint mm1_joy_file = 0x1C2E;
-const uint mm1_joy0_addr = 0x174D; // patch for the original poll routine
-const uint mm1_joy0_file = 0x0FBB;
-const uint mm1_joy1_addr = 0x17EA; // path for the original calibrate routine
-const uint mm1_joy1_file = 0x1058;
+// location: unused tandy video function 6 (+7 offset, max 314 bytes)
+#define mm1_joy_addr    0x23C0
+#define mm1_joy_file    0x1C2E
+// patch for the original poll routine
+#define mm1_joy0_addr   0x174D
+#define mm1_joy0_file   0x0FBB
+// path for the original calibrate routine
+#define mm1_joy1_addr   0x17EA
+#define mm1_joy1_file   0x1058
 const uint8 mm1_joy[] = {
 	// joystick variable storage
 	WORD(0),  // joy_x_accum for temporary average of polling
@@ -352,8 +359,9 @@ const uint8 mm1_joy0[] = { JMP(mm1_joy0_addr,mm1_joy_addr+151), 0x90 };
 const uint8 mm1_joy1[] = { CALL(mm1_joy1_addr,mm1_joy_addr+82), 0x90 };
 
 // joystick fire button filter replacement for joystick poll
-const uint mm1_select_addr = 0x24FD; // unused tandy video function 7 (+7 offset, max 111 bytes)
-const uint mm1_select_file = 0x1D6B;
+// location: unused tandy video function 7 (+7 offset, max 111 bytes)
+#define mm1_select_addr   0x24FD
+#define mm1_select_file   0x1D6B
 const uint8 mm1_select[] = {
 	// filter variable storage
 	0x00,
@@ -377,14 +385,14 @@ const uint8 mm1_select[] = {
 	0xC3,                                 // retn
 };
 // select screen's call to joystick poll replaced with the filtered poll routine above
-const uint mm1_select0_addr = 0x49BE;
-const uint mm1_select1_addr = 0x4A2B;
-const uint mm1_select2_addr = 0x52CD;
-const uint mm1_select3_addr = 0x53F5;
-const uint mm1_select0_file = 0x422C;
-const uint mm1_select1_file = 0x4299;
-const uint mm1_select2_file = 0x4B3B;
-const uint mm1_select3_file = 0x4C63;
+#define mm1_select0_addr   0x49BE
+#define mm1_select1_addr   0x4A2B
+#define mm1_select2_addr   0x52CD
+#define mm1_select3_addr   0x53F5
+#define mm1_select0_file   0x422C
+#define mm1_select1_file   0x4299
+#define mm1_select2_file   0x4B3B
+#define mm1_select3_file   0x4C63
 const uint8 mm1_select0[] = { CALL(mm1_select0_addr, mm1_select_addr+1) };
 const uint8 mm1_select1[] = { CALL(mm1_select1_addr, mm1_select_addr+1) };
 const uint8 mm1_select2[] = { CALL(mm1_select2_addr, mm1_select_addr+1) };
@@ -430,33 +438,43 @@ const patch mm1_patch[] =
 // one which always runs as EGA and overwrites the CGA video code,
 // and another which always runs as CGA/TANDY and overwrites the EGA video code.
 
-const uint mm3c_slow_addr      = 0x61D5; // ega video function 0 (61 bytes until function 1)
-const uint mm3c_table_addr     = 0x6236; // ega video function 1 (316 bytes until function 3)
-const uint mm3c_settings_addr  = 0x6372; // ega video function 3 (97 bytes until function 4)
-const uint mm3c_select_addr    = 0x63DE; // ega video function 4 (max 286 bytes)
+// ega video function 0 (61 bytes until function 1)
+// ega video function 1 (316 bytes until function 3)
+// ega video function 3 (97 bytes until function 4)
+// ega video function 4 (max 286 bytes)
+#define mm3c_slow_addr        0x61D5
+#define mm3c_table_addr       0x6236
+#define mm3c_settings_addr    0x6372
+#define mm3c_select_addr      0x63DE
 
-const uint mm3c_slow_file      = 0x1644;
-const uint mm3c_table_file     = 0x16A5;
-const uint mm3c_settings_file  = 0x17E1;
-const uint mm3c_select_file    = 0x184D;
+#define mm3c_slow_file        0x1644
+#define mm3c_table_file       0x16A5
+#define mm3c_settings_file    0x17E1
+#define mm3c_select_file      0x184D
 
-const uint8 mm3c_video_default = 0; // CGA
-const uint8 mm3c_video_and     = 0x02; // allows 0,2 = CGA, TANDY
-const uint8 mm3c_video_or      = 0x00;
+// CGA, allows 0,2 = CGA, TANDY
+#define mm3c_video_default    0
+#define mm3c_video_and        0x02
+#define mm3c_video_or         0x00
 
-const uint mm3e_slow_addr      = 0x75C5; // cga video function 0 (68 bytes until function 1)
-const uint mm3e_table_addr     = 0x7609; // cga video function 1 (155 bytes until function 3)
-const uint mm3e_settings_addr  = 0x76A4; // cga video function 3 (125 bytes until function 4)
-const uint mm3e_select_addr    = 0x7721; // cga video function 4 (max 259 bytes)
+// cga video function 0 (68 bytes until function 1)
+// cga video function 1 (155 bytes until function 3)
+// cga video function 3 (125 bytes until function 4)
+// cga video function 4 (max 259 bytes)
+#define mm3e_slow_addr        0x75C5
+#define mm3e_table_addr       0x7609
+#define mm3e_settings_addr    0x76A4
+#define mm3e_select_addr      0x7721
 
-const uint mm3e_slow_file      = 0x2A34;
-const uint mm3e_table_file     = 0x2A78;
-const uint mm3e_settings_file  = 0x2B13;
-const uint mm3e_select_file    = 0x2B90;
+#define mm3e_slow_file        0x2A34
+#define mm3e_table_file       0x2A78
+#define mm3e_settings_file    0x2B13
+#define mm3e_select_file      0x2B90
 
-const uint8 mm3e_video_default = 1; // EGA
-const uint8 mm3e_video_and     = 0x00; // allows 1 = EGA
-const uint8 mm3e_video_or      = 0x01;
+// EGA allows 1 = EGA
+#define mm3e_video_default    1
+#define mm3e_video_and        0x00
+#define mm3e_video_or         0x01
 
 void offset_word(uint8* buffer, uint pos, int offset)
 {
@@ -500,8 +518,8 @@ const uint8 mm3_slow[] = {
 };
 // patch just before a joystick input poll to insert the delay,
 // replacing "cmp cs:505Bh, 0" with a call.
-const uint mm3_slow0_addr = 0xD7FD;
-const uint mm3_slow0_file = 0x8ADA;
+#define mm3_slow0_addr   0xD7FD
+#define mm3_slow0_file   0x8ADA
 const uint8 mm3c_slow0[] = { CALL(mm3_slow0_addr,mm3c_slow_addr), 0x90, 0x90 };
 const uint8 mm3e_slow0[] = { CALL(mm3_slow0_addr,mm3e_slow_addr), 0x90, 0x90 };
 // only the main game loop is patched, but several other input poll candidates were found,
@@ -596,8 +614,9 @@ void mm3e_table_fixup()
 // a routine to copy the new settings table results into the original settings table
 // and otherwise finalize the new slowdown setting
 
-const uint mm3_settings0_addr = 0xD55D; // original settings code location to redirect
-const uint mm3_settings0_file = 0x883A;
+// original settings code location to redirect
+#define mm3_settings0_addr   0xD55D
+#define mm3_settings0_file   0x883A
 uint8 mm3_settings[] = { // not const, see fixup below
 	0x9C,                                     // pushf
 	0x50,                                     // push ax
@@ -662,20 +681,21 @@ uint8 mm3_select[] = { // not const, see fixup below
 	0xC3,                                 // retn
 };
 // select screen's call to joystick poll replaced with the filtered poll routine above
-const uint mm3_select0_addr = 0xCE83;
-const uint mm3_select1_addr = 0xD262; // stage select screen
-const uint mm3_select2_addr = 0xD395;
-const uint mm3_select3_addr = 0xD6F4;
-const uint mm3_select4_addr = 0xD729;
-const uint mm3_select5_addr = 0xD75E;
-const uint mm3_select6_addr = 0xD864;
-const uint mm3_select0_file = 0x8160;
-const uint mm3_select1_file = 0x853F;
-const uint mm3_select2_file = 0x8672;
-const uint mm3_select3_file = 0x89D1;
-const uint mm3_select4_file = 0x8A06;
-const uint mm3_select5_file = 0x8A3B;
-const uint mm3_select6_file = 0x8B41;
+// select1 is the stage select screen (additionally filters left/right)
+#define mm3_select0_addr   0xCE83
+#define mm3_select1_addr   0xD262
+#define mm3_select2_addr   0xD395
+#define mm3_select3_addr   0xD6F4
+#define mm3_select4_addr   0xD729
+#define mm3_select5_addr   0xD75E
+#define mm3_select6_addr   0xD864
+#define mm3_select0_file   0x8160
+#define mm3_select1_file   0x853F
+#define mm3_select2_file   0x8672
+#define mm3_select3_file   0x89D1
+#define mm3_select4_file   0x8A06
+#define mm3_select5_file   0x8A3B
+#define mm3_select6_file   0x8B41
 const uint8 mm3c_select0[] = { CALL(mm3_select0_addr, mm3c_select_addr+1) };
 const uint8 mm3c_select1[] = { CALL(mm3_select1_addr, mm3c_select_addr+1) };
 const uint8 mm3c_select2[] = { CALL(mm3_select2_addr, mm3c_select_addr+1) };
@@ -774,7 +794,8 @@ int patch_file(const char* filename_in, const char* filename_out, const patch* c
 {
 	FILE* fi;
 	FILE* fo;
-	int i, pos, copied, patched;
+	int i, pos;
+	uint32 copied, patched;
 	const patch* p;
 	char c;
 
@@ -827,7 +848,7 @@ int patch_file(const char* filename_in, const char* filename_out, const patch* c
 		}
 	}
 
-	printf("%d bytes copied, %d bytes patched.\n",copied,patched);
+	printf("%ld bytes copied, %ld bytes patched.\n",copied,patched);
 	fclose(fi);
 	fclose(fo);
 	return 0;
@@ -871,7 +892,7 @@ int main()
 
 	printf("Opening " FILE_CRC "...\n");
 	crc = crc32(FILE_CRC);
-	printf("CRC32: %08X\n", crc);
+	printf("CRC32: %08lX\n", crc);
 
 	if (crc == CRC_MM1 || TEST)
 	{
@@ -892,8 +913,8 @@ int main()
 	if (crc != CRC_MM1 && crc != CRC_MM3)
 	{
 		printf("Unrecognized CRC32. Expected:\n");
-		printf("  %08X - Mega Man\n",CRC_MM1);
-		printf("  %08X - Mega Man 3\n",CRC_MM3);
+		printf("  %08lX - Mega Man\n",CRC_MM1);
+		printf("  %08lX - Mega Man 3\n",CRC_MM3);
 		result = 1;
 	}
 
