@@ -55,7 +55,7 @@ const uint8 six[] = { 6 };
 
 // New data from the patch is placed over top of old code.
 // For Mega Man 1, there was non-functioning dead code for a 16-colour
-// Tandy mode that was never used. For Meag Man 3, either the CGA or EGA
+// Tandy mode that was never used. For Mega Man 3, either the CGA or EGA
 // mode will be disabled so that its code can be overwritten.
 // Each video mode has a set of subroutines, and their entry points
 // were used merely for my own convenience. In some cases there
