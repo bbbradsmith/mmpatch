@@ -1,0 +1,82 @@
+MMPATCH
+
+
+A patch for Mega Man (DOS) and Mega Man 3 (DOS)
+
+Brad Smith, 2019
+http://rainwarrior.ca
+
+https://github.com/bbbradsmith/mmpatch
+
+
+Instructions
+============
+
+MMPATCH.EXE is a DOS executable.
+It must be run in a DOS environment, just like the game it patches.
+
+Place MMPATCH.EXE in your game folder next to MM.EXE.
+
+Run it under a DOS environment.
+
+A new executable will be created:
+  MM1.EXE for Mega Man
+  MM3EGA.EXE/MM3CGA.EXE for Mega Man 3
+
+Run the new executable to play the game.
+The setup menu will have a new option to select the game speed.
+
+Mega Man 3 will have two executables, one for EGA graphics, and one for
+CGA/Tandy. The EGA version is recommended.
+
+
+Purpose
+=======
+
+The original release of these games were programmed for very slow
+early DOS computers, without an effective timer to limit the game speed
+on later, faster computers. This makes these games difficult or impossible
+to play on most computers.
+
+This patch fixes that with a very minimal addition of a framerate limit
+to correct this problem, making it playable on more or less any computer
+that can run DOS, and even modern PCs running FreeDOS.
+
+My only goal was to compensate for issues that stem from computer speed;
+the game is otherwise left intact. No attempt was made to alter any of its
+original gameplay.
+
+
+Details
+=======
+
+Mega Man receives the following changes:
+
+1. Slowdown option to limit framerate.
+2. Default setting to EGA with joystick off.
+3. Joystick routine modified to automatically adjust for CPU speed.
+4. Joystick wait screens now wait for button press rather than hold.
+
+Mega Man 3 receives the following changes:
+
+1. Slowdown option to limit framerate.
+2. Default setting to EGA (or CGA) with joystick off.
+3. Joystick wait screens now wait for button press rather than hold.
+
+Extensive information about the patches is documented in the included
+source code file MMPATCH.C, which is a C program. It was compiled with
+the Open Watcom compiler.
+
+The MM.EXE executable is expected to have a CRC32 hash of:
+  AEA06825 - Mega Man
+  06C09829 - Mega Man 3
+
+
+Links
+=====
+
+The most recent release and source code are available here:
+https://github.com/bbbradsmith/mmpatch
+
+Brad Smith's website:
+http://rainwarrior.ca
