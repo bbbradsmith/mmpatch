@@ -1,6 +1,6 @@
 //
 // Mega Man (DOS) and Mega Man 3 (DOS) patch utility
-// Version 0
+// Version 1
 // Brad Smith, 2019
 // http://rainwarrior/ca
 //
@@ -10,7 +10,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-const int debug = 1; // 1 = lists each patch applied
+const int debug = 0; // 1 = lists each patch applied
+// TEST 1 will operate on both 1MM.EXE and 3MM.EXE
+#define TEST 0
 
 typedef uint32_t uint32;
 typedef uint16_t uint16;
@@ -20,6 +22,19 @@ typedef unsigned int uint;
 // MM.EXE CRC32 to identify which file is present
 const uint32 CRC_MM1 = 0xAEA06825;
 const uint32 CRC_MM3 = 0x06C09829;
+
+#if !TEST
+#define FILE_MM1 "MM.EXE"
+#define FILE_MM3 "MM.EXE"
+#else
+#define FILE_MM1 "1MM.EXE"
+#define FILE_MM3 "3MM.EXE"
+#endif
+
+#define FILE_CRC "MM.EXE"
+#define OUT_MM1 "MM1.EXE"
+#define OUT_MM3CGA "MM3CGA.EXE"
+#define OUT_MM3EGA "MM3EGA.EXE"
 
 const uint8 default_speed = 3;
 
@@ -336,6 +351,45 @@ const uint8 mm1_joy0[] = { JMP(mm1_joy0_addr,mm1_joy_addr+151), 0x90 };
 // patch for original 
 const uint8 mm1_joy1[] = { CALL(mm1_joy1_addr,mm1_joy_addr+82), 0x90 };
 
+// joystick fire button filter replacement for joystick poll
+const uint mm1_select_addr = 0x24FD; // unused tandy video function 7 (+7 offset, max 111 bytes)
+const uint mm1_select_file = 0x1D6B;
+const uint8 mm1_select[] = {
+	// filter variable storage
+	0x00,
+	// input filter for select screen (+1)
+	CALL(mm1_select_addr+1,0x173C),       // call joystick poll
+	0x9C,                                 // pushf
+	0x50,                                 // push ax
+	0x1E,                                 // push ds
+	0x8C, 0xC8,                           // mov ax, cs
+	0x8E, 0xD8,                           // mov ds, cs
+	0xA0, WORD(0x1204),                   // mov al, input_bitfield
+	0x8A, 0xE0,                           // mov ah, al
+	0x22, 0x06, WORD(mm1_select_addr+0),  // and al, filter
+	0xA2, WORD(0x1204),                   // mov input_bitfield, al
+	0x80, 0xE4, 0x80,                     // and ah, 80h ; filter fire
+	0xF6, 0xD4,                           // not ah
+	0x88, 0x26, WORD(mm1_select_addr+0),  // mov filter, ah
+	0x1F,                                 // pop ds
+	0x58,                                 // pop ax
+	0x9D,                                 // popf
+	0xC3,                                 // retn
+};
+// select screen's call to joystick poll replaced with the filtered poll routine above
+const uint mm1_select0_addr = 0x49BE;
+const uint mm1_select1_addr = 0x4A2B;
+const uint mm1_select2_addr = 0x52CD;
+const uint mm1_select3_addr = 0x53F5;
+const uint mm1_select0_file = 0x422C;
+const uint mm1_select1_file = 0x4299;
+const uint mm1_select2_file = 0x4B3B;
+const uint mm1_select3_file = 0x4C63;
+const uint8 mm1_select0[] = { CALL(mm1_select0_addr, mm1_select_addr+1) };
+const uint8 mm1_select1[] = { CALL(mm1_select1_addr, mm1_select_addr+1) };
+const uint8 mm1_select2[] = { CALL(mm1_select2_addr, mm1_select_addr+1) };
+const uint8 mm1_select3[] = { CALL(mm1_select3_addr, mm1_select_addr+1) };
+
 const patch mm1_patch[] =
 {
 	// slowdown
@@ -356,6 +410,12 @@ const patch mm1_patch[] =
 	{ mm1_joy_file, LENGTH(mm1_joy), mm1_joy },
 	{ mm1_joy0_file, LENGTH(mm1_joy0), mm1_joy0 },
 	{ mm1_joy1_file, LENGTH(mm1_joy1), mm1_joy1 },
+	// selection screen joystick input filter
+	{ mm1_select_file, LENGTH(mm1_select), mm1_select },
+	{ mm1_select0_file, LENGTH(mm1_select0), mm1_select0 },
+	{ mm1_select1_file, LENGTH(mm1_select1), mm1_select1 },
+	{ mm1_select2_file, LENGTH(mm1_select2), mm1_select2 },
+	{ mm1_select3_file, LENGTH(mm1_select3), mm1_select3 },
 	// end
 	{0,0,NULL}
 };
@@ -583,7 +643,6 @@ void mm3e_settings_fixup()
 	mm3_settings[52] = mm3e_video_or;
 }
 
-
 uint8 mm3_select[] = { // not const, see fixup below
 	// filter variable storage
 	0x00,
@@ -595,7 +654,7 @@ uint8 mm3_select[] = { // not const, see fixup below
 	0x8A, 0xE0,                           // mov ah, al
 	0x22, 0x06, WORD(mm3c_select_addr+0), // and al, filter
 	0xA2, WORD(0x538E),                   // mov input_bitfield, al
-	0x80, 0xE4, 0x03,                     // and ah, 3
+	0x80, 0xE4, 0x83,                     // and ah, 83h ; filter fire, left, right
 	0xF6, 0xD4,                           // not ah
 	0x88, 0x26, WORD(mm3c_select_addr+0), // mov filter, ah
 	0x58,                                 // pop ax
@@ -603,10 +662,34 @@ uint8 mm3_select[] = { // not const, see fixup below
 	0xC3,                                 // retn
 };
 // select screen's call to joystick poll replaced with the filtered poll routine above
-const uint mm3_select0_addr = 0xD262;
-const uint mm3_select0_file = 0x853F;
+const uint mm3_select0_addr = 0xCE83;
+const uint mm3_select1_addr = 0xD262; // stage select screen
+const uint mm3_select2_addr = 0xD395;
+const uint mm3_select3_addr = 0xD6F4;
+const uint mm3_select4_addr = 0xD729;
+const uint mm3_select5_addr = 0xD75E;
+const uint mm3_select6_addr = 0xD864;
+const uint mm3_select0_file = 0x8160;
+const uint mm3_select1_file = 0x853F;
+const uint mm3_select2_file = 0x8672;
+const uint mm3_select3_file = 0x89D1;
+const uint mm3_select4_file = 0x8A06;
+const uint mm3_select5_file = 0x8A3B;
+const uint mm3_select6_file = 0x8B41;
 const uint8 mm3c_select0[] = { CALL(mm3_select0_addr, mm3c_select_addr+1) };
+const uint8 mm3c_select1[] = { CALL(mm3_select1_addr, mm3c_select_addr+1) };
+const uint8 mm3c_select2[] = { CALL(mm3_select2_addr, mm3c_select_addr+1) };
+const uint8 mm3c_select3[] = { CALL(mm3_select3_addr, mm3c_select_addr+1) };
+const uint8 mm3c_select4[] = { CALL(mm3_select4_addr, mm3c_select_addr+1) };
+const uint8 mm3c_select5[] = { CALL(mm3_select5_addr, mm3c_select_addr+1) };
+const uint8 mm3c_select6[] = { CALL(mm3_select6_addr, mm3c_select_addr+1) };
 const uint8 mm3e_select0[] = { CALL(mm3_select0_addr, mm3e_select_addr+1) };
+const uint8 mm3e_select1[] = { CALL(mm3_select1_addr, mm3e_select_addr+1) };
+const uint8 mm3e_select2[] = { CALL(mm3_select2_addr, mm3e_select_addr+1) };
+const uint8 mm3e_select3[] = { CALL(mm3_select3_addr, mm3e_select_addr+1) };
+const uint8 mm3e_select4[] = { CALL(mm3_select4_addr, mm3e_select_addr+1) };
+const uint8 mm3e_select5[] = { CALL(mm3_select5_addr, mm3e_select_addr+1) };
+const uint8 mm3e_select6[] = { CALL(mm3_select6_addr, mm3e_select_addr+1) };
 // converts mm3_select from CGA to EGA version
 void mm3e_select_fixup()
 {
@@ -636,6 +719,12 @@ const patch mm3c_patch[] =
 	// selection screen joystick input filter
 	{ mm3c_select_file, LENGTH(mm3_select), mm3_select },
 	{ mm3_select0_file, LENGTH(mm3c_select0), mm3c_select0 },
+	{ mm3_select1_file, LENGTH(mm3c_select1), mm3c_select1 },
+	{ mm3_select2_file, LENGTH(mm3c_select2), mm3c_select2 },
+	{ mm3_select3_file, LENGTH(mm3c_select3), mm3c_select3 },
+	{ mm3_select4_file, LENGTH(mm3c_select4), mm3c_select4 },
+	{ mm3_select5_file, LENGTH(mm3c_select5), mm3c_select5 },
+	{ mm3_select6_file, LENGTH(mm3c_select6), mm3c_select6 },
 	// end
 	{0,0,NULL}
 };
@@ -658,6 +747,12 @@ const patch mm3e_patch[] =
 	// selection screen joystick input filter
 	{ mm3e_select_file, LENGTH(mm3_select), mm3_select },
 	{ mm3_select0_file, LENGTH(mm3e_select0), mm3e_select0 },
+	{ mm3_select1_file, LENGTH(mm3e_select1), mm3e_select1 },
+	{ mm3_select2_file, LENGTH(mm3e_select2), mm3e_select2 },
+	{ mm3_select3_file, LENGTH(mm3e_select3), mm3e_select3 },
+	{ mm3_select4_file, LENGTH(mm3e_select4), mm3e_select4 },
+	{ mm3_select5_file, LENGTH(mm3e_select5), mm3e_select5 },
+	{ mm3_select6_file, LENGTH(mm3e_select6), mm3e_select6 },
 	// end
 	{0,0,NULL}
 };
@@ -772,32 +867,34 @@ uint32 crc32(const char* filename)
 int main()
 {
 	uint32 crc;
-	int result;
+	int result = 0;
 
-	printf("Opening MM.EXE...\n");
-	crc = crc32("MM.EXE");
+	printf("Opening " FILE_CRC "...\n");
+	crc = crc32(FILE_CRC);
 	printf("CRC32: %08X\n", crc);
 
-	if (crc == CRC_MM1)
+	if (crc == CRC_MM1 || TEST)
 	{
 		printf("\n");
-		return patch_file("MM.EXE","MM1.EXE",mm1_patch);
+		result = patch_file(FILE_MM1, OUT_MM1, mm1_patch);
+		if (result) return result;
 	}
-	else if (crc == CRC_MM3)
+	if (crc == CRC_MM3 || TEST)
 	{
 		printf("\n");
-		result = patch_file("MM.EXE","MM3CGA.EXE",mm3c_patch);
+		result = patch_file(FILE_MM3, OUT_MM3CGA, mm3c_patch);
 		if (result) return result;
 		printf("\n");
 		mm3e_patch_fixup();
-		return patch_file("MM.EXE","MM3EGA.EXE",mm3e_patch);
+		result = patch_file(FILE_MM3, OUT_MM3EGA, mm3e_patch);
+		if (result) return result;
 	}
-	else
+	if (crc != CRC_MM1 && crc != CRC_MM3)
 	{
 		printf("Unrecognized CRC32. Expected:\n");
 		printf("  %08X - Mega Man\n",CRC_MM1);
 		printf("  %08X - Mega Man 3\n",CRC_MM3);
-		return 1;
+		result = 1;
 	}
 
 	return 0;
