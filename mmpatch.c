@@ -33,8 +33,7 @@ const uint32 CRC_MM3 = 0x06C09829;
 
 #define FILE_CRC    "MM.EXE"
 #define OUT_MM1     "MM1.EXE"
-#define OUT_MM3CGA  "MM3CGA.EXE"
-#define OUT_MM3EGA  "MM3EGA.EXE"
+#define OUT_MM3     "MM3.EXE"
 
 #define default_speed   3
 
@@ -53,14 +52,16 @@ typedef struct
 
 const uint8 six[] = { 6 };
 
-// New data from the patch is placed over top of old code.
-// For Mega Man 1, there was non-functioning dead code for a 16-colour
-// Tandy mode that was never used. For Mega Man 3, either the CGA or EGA
-// mode will be disabled so that its code can be overwritten.
+// New data from the patch is placed over top of existing unuused code so that
+// the resulting executable will have the same memory footprint as before.
+// In both games there was non-functioning dead code for a 16-colour
+// Tandy mode that was never used.
+
 // Each video mode has a set of subroutines, and their entry points
-// were used merely for my own convenience. In some cases there
+// were used here merely for my own convenience. In some cases there
 // is a small offset from the entry point to avoid a segment
-// relocation value that would get overwritten when loading the executable.
+// relocation value that would get overwritten when loading the executable,
+// but the location choices are otherwise arbitrary.
 
 // Additionally, the executables had been packed by MASM EXEPACK.
 // The following utility was used to unpack them for analysis:
@@ -432,63 +433,23 @@ const patch mm1_patch[] =
 // Mega Man 3 patch
 //
 
-// Because I have not identified unused code that I could replace,
-// such as the unfinished/disabled Tandy video routines in Mega Man 1,
-// I have instead decidde to create two versions of this patch,
-// one which always runs as EGA and overwrites the CGA video code,
-// and another which always runs as CGA/TANDY and overwrites the EGA video code.
+// tandy video function 0 (68 bytes until function 1)
+// tandy video function 1 (242 bytes until function 3)
+// tandy video function 3 (178 bytes until function 4)
+// tandy video function 4 (max 261 bytes)
 
-// ega video function 0 (61 bytes until function 1)
-// ega video function 1 (316 bytes until function 3)
-// ega video function 3 (97 bytes until function 4)
-// ega video function 4 (max 286 bytes)
-#define mm3c_slow_addr        0x61D5
-#define mm3c_table_addr       0x6236
-#define mm3c_settings_addr    0x6372
-#define mm3c_select_addr      0x63DE
+#define mm3_slow_addr        0x6CA9
+#define mm3_table_addr       0x6CED
+#define mm3_settings_addr    0x6DDF
+#define mm3_select_addr      0x6E91
 
-#define mm3c_slow_file        0x1644
-#define mm3c_table_file       0x16A5
-#define mm3c_settings_file    0x17E1
-#define mm3c_select_file      0x184D
+#define mm3_slow_file        0x2118
+#define mm3_table_file       0x215C
+#define mm3_settings_file    0x224E
+#define mm3_select_file      0x2300
 
-// CGA, allows 0,2 = CGA, TANDY
-#define mm3c_video_default    0
-#define mm3c_video_and        0x02
-#define mm3c_video_or         0x00
-
-// cga video function 0 (68 bytes until function 1)
-// cga video function 1 (155 bytes until function 3)
-// cga video function 3 (125 bytes until function 4)
-// cga video function 4 (max 259 bytes)
-#define mm3e_slow_addr        0x75C5
-#define mm3e_table_addr       0x7609
-#define mm3e_settings_addr    0x76A4
-#define mm3e_select_addr      0x7721
-
-#define mm3e_slow_file        0x2A34
-#define mm3e_table_file       0x2A78
-#define mm3e_settings_file    0x2B13
-#define mm3e_select_file      0x2B90
-
-// EGA allows 1 = EGA
-#define mm3e_video_default    1
-#define mm3e_video_and        0x00
-#define mm3e_video_or         0x01
-
-void offset_word(uint8* buffer, uint pos, int offset)
-{
-	uint base = buffer[pos+0] | (buffer[pos+1] << 8);
-	uint result = (base + offset) & 0xFFFF;
-	buffer[pos+0] = result & 0xFF;
-	buffer[pos+1] = (result >> 8) & 0xFF;
-}
-
-void replace_word(uint8* buffer, uint pos, uint16 word)
-{
-	buffer[pos+0] = word & 0xFF;
-	buffer[pos+1] = word >> 8;
-}
+// 1 = EGA
+#define mm3_video_default    1
 
 // slowdown routine to delay a specified number of frames
 const uint8 mm3_slow[] = {
@@ -520,8 +481,7 @@ const uint8 mm3_slow[] = {
 // replacing "cmp cs:505Bh, 0" with a call.
 #define mm3_slow0_addr   0xD7FD
 #define mm3_slow0_file   0x8ADA
-const uint8 mm3c_slow0[] = { CALL(mm3_slow0_addr,mm3c_slow_addr), 0x90, 0x90 };
-const uint8 mm3e_slow0[] = { CALL(mm3_slow0_addr,mm3e_slow_addr), 0x90, 0x90 };
+const uint8 mm3_slow0[] = { CALL(mm3_slow0_addr,mm3_slow_addr), 0x90, 0x90 };
 // only the main game loop is patched, but several other input poll candidates were found,
 // searching for uses of cs:505Bh which is the joystick setting flag:
 // address (file offset)
@@ -538,7 +498,7 @@ const uint8 mm3e_slow0[] = { CALL(mm3_slow0_addr,mm3e_slow_addr), 0x90, 0x90 };
 // D757h (8A34)
 // D85Dh (8B3A)
 
-uint8 mm3_table[] = { // not const, see fixup below
+const uint8 mm3_table[] = {
 	// table of strings for the slowdown setting
 	0x28,0x09,1,'0',
 	0x2A,0x09,1,'1',
@@ -552,18 +512,18 @@ uint8 mm3_table[] = { // not const, see fixup below
 	0x3A,0x09,1,'9',
 	0x18,0x09,9,'S','l','o','w','d','o','w','n',':',
 	default_speed, 9,
-	WORD(mm3c_table_addr+(4*10)),
-	WORD(mm3c_table_addr+(4*0)),
-	WORD(mm3c_table_addr+(4*1)),
-	WORD(mm3c_table_addr+(4*2)),
-	WORD(mm3c_table_addr+(4*3)),
-	WORD(mm3c_table_addr+(4*4)),
-	WORD(mm3c_table_addr+(4*5)),
-	WORD(mm3c_table_addr+(4*6)),
-	WORD(mm3c_table_addr+(4*7)),
-	WORD(mm3c_table_addr+(4*8)),
-	WORD(mm3c_table_addr+(4*9)),
-	mm3c_video_default,2, // default (0 = CGA, 1 = EGA), maximum (2 = TANDY)
+	WORD(mm3_table_addr+(4*10)),
+	WORD(mm3_table_addr+(4*0)),
+	WORD(mm3_table_addr+(4*1)),
+	WORD(mm3_table_addr+(4*2)),
+	WORD(mm3_table_addr+(4*3)),
+	WORD(mm3_table_addr+(4*4)),
+	WORD(mm3_table_addr+(4*5)),
+	WORD(mm3_table_addr+(4*6)),
+	WORD(mm3_table_addr+(4*7)),
+	WORD(mm3_table_addr+(4*8)),
+	WORD(mm3_table_addr+(4*9)),
+	mm3_video_default,2, // default (1 = EGA)
 	WORD(0x4F8C), // Graphics Card:
 	WORD(0x4F9D), // CGA
 	WORD(0x4FA3), // EGA
@@ -587,29 +547,18 @@ uint8 mm3_table[] = { // not const, see fixup below
 	0,0, // start
 	WORD(0x500A), // Start Game
 	// settings pointer table, the "default" above also store the current option
-	WORD(mm3c_table_addr+52+(2*0)),
-	WORD(mm3c_table_addr+52+(2*(12))),
-	WORD(mm3c_table_addr+52+(2*(12+5))),
-	WORD(mm3c_table_addr+52+(2*(12+5+4))),
-	WORD(mm3c_table_addr+52+(2*(12+5+4+4))),
-	WORD(mm3c_table_addr+52+(2*(12+5+4+4+4))),
-	WORD(mm3c_table_addr+52+(2*(12+5+4+4+4+4))),
+	WORD(mm3_table_addr+52+(2*0)),
+	WORD(mm3_table_addr+52+(2*(12))),
+	WORD(mm3_table_addr+52+(2*(12+5))),
+	WORD(mm3_table_addr+52+(2*(12+5+4))),
+	WORD(mm3_table_addr+52+(2*(12+5+4+4))),
+	WORD(mm3_table_addr+52+(2*(12+5+4+4+4))),
+	WORD(mm3_table_addr+52+(2*(12+5+4+4+4+4))),
 };
 // the original text table and settings pointer table
 // resided at 501Ah and 5048h, and some references to them need to be replaced.
-const uint8 mm3c_table0[] = { WORD(mm3c_table_addr+52) };    // 501Ah
-const uint8 mm3e_table0[] = { WORD(mm3e_table_addr+52) };    // 501Ah
-const uint8 mm3c_table1[] = { WORD(mm3c_table_addr+52+70) }; // 5048h
-const uint8 mm3e_table1[] = { WORD(mm3e_table_addr+52+70) }; // 5048h
-// converts mm3_table from CGA to EGA version
-void mm3e_table_fixup()
-{
-	int i;
-	int offset = mm3e_table_addr - mm3c_table_addr;
-	for (i=0; i<11; ++i) offset_word(mm3_table,52+2+(i*2),offset);
-	for (i=0; i<7; ++i) offset_word(mm3_table,52+70+(i*2),offset);
-	mm3_table[52+(2*12)] = mm3e_video_default;
-}
+const uint8 mm3_table0[] = { WORD(mm3_table_addr+52) };    // 501Ah
+const uint8 mm3_table1[] = { WORD(mm3_table_addr+52+70) }; // 5048h
 
 // a routine to copy the new settings table results into the original settings table
 // and otherwise finalize the new slowdown setting
@@ -617,7 +566,7 @@ void mm3e_table_fixup()
 // original settings code location to redirect
 #define mm3_settings0_addr   0xD55D
 #define mm3_settings0_file   0x883A
-uint8 mm3_settings[] = { // not const, see fixup below
+const uint8 mm3_settings[] = {
 	0x9C,                                     // pushf
 	0x50,                                     // push ax
 	0x53,                                     // push bx
@@ -629,18 +578,16 @@ uint8 mm3_settings[] = { // not const, see fixup below
 	                                          //repeat: ; count down cx from 6 to 1
 	0x89, 0xCB,                               // mov bx, cx
 	0xD1, 0xE3,                               // shl bx, 1
-	0x8B, 0x9F, WORD(mm3c_table_addr+52+70),  // mov bx, [bx+new_settings_table]
+	0x8B, 0x9F, WORD(mm3_table_addr+52+70),   // mov bx, [bx+new_settings_table]
 	0x8A, 0x07,                               // mov al, [bx]
 	0x89, 0xCB,                               // mov bx, cx
 	0xD1, 0xE3,                               // shl bx, 1
 	0x8B, 0x9F, WORD(0x5048-2),               // mov bx, [bx+old_settings_table-2]
 	0x88, 0x07,                               // mov [bx], al
 	0xE2, 0xEA,                               // loop repeat
-	0x8B, 0x1E, WORD(mm3c_table_addr+52+70),  // mov bx, new_settings_table ; extra entry (0) is slowdown
+	0x8B, 0x1E, WORD(mm3_table_addr+52+70),   // mov bx, new_settings_table ; extra entry (0) is slowdown
 	0x8A, 0x07,                               // mov al, [bx]
-	0xA2, WORD(mm3c_slow_addr+5),             // mov speed_constant, al
-	0x80, 0x26, WORD(0x501A), mm3c_video_and, //and ds:501A, 2
-	0x80, 0x0E, WORD(0x501A), mm3c_video_or,  // or ds:501A, 0
+	0xA2, WORD(mm3_slow_addr+5),              // mov speed_constant, al
 	0x1F,                                     // pop ds
 	0x59,                                     // pop cx
 	0x5B,                                     // pop bx
@@ -649,33 +596,22 @@ uint8 mm3_settings[] = { // not const, see fixup below
 	0x8A, 0x26, WORD(0x505A),                 // mov ah, ds:505Ah
 	0xC3,                                     // retn
 };
-const uint8 mm3c_settings0[] = { CALL(mm3_settings0_addr, mm3c_settings_addr), 0x90 };
-const uint8 mm3e_settings0[] = { CALL(mm3_settings0_addr, mm3e_settings_addr), 0x90 };
-// converts mm3_settings from CGA to EGA version
-void mm3e_settings_fixup()
-{
-	int offset =  mm3e_table_addr - mm3c_table_addr;
-	offset_word(mm3_settings, 18, offset);
-	offset_word(mm3_settings, 36, offset);
-	offset_word(mm3_settings, 41, mm3e_slow_addr - mm3c_slow_addr);
-	mm3_settings[47] = mm3e_video_and;
-	mm3_settings[52] = mm3e_video_or;
-}
+const uint8 mm3_settings0[] = { CALL(mm3_settings0_addr, mm3_settings_addr), 0x90 };
 
-uint8 mm3_select[] = { // not const, see fixup below
+const uint8 mm3_select[] = {
 	// filter variable storage
 	0x00,
 	// input filter for select screen (+1)
-	CALL(mm3c_select_addr+1,0x6046),      // call joystick poll
+	CALL(mm3_select_addr+1,0x6046),       // call joystick poll
 	0x9C,                                 // pushf
 	0x50,                                 // push ax
 	0xA0, WORD(0x538E),                   // mov al, input_bitfield
 	0x8A, 0xE0,                           // mov ah, al
-	0x22, 0x06, WORD(mm3c_select_addr+0), // and al, filter
+	0x22, 0x06, WORD(mm3_select_addr+0),  // and al, filter
 	0xA2, WORD(0x538E),                   // mov input_bitfield, al
 	0x80, 0xE4, 0x83,                     // and ah, 83h ; filter fire, left, right
 	0xF6, 0xD4,                           // not ah
-	0x88, 0x26, WORD(mm3c_select_addr+0), // mov filter, ah
+	0x88, 0x26, WORD(mm3_select_addr+0),  // mov filter, ah
 	0x58,                                 // pop ax
 	0x9D,                                 // popf
 	0xC3,                                 // retn
@@ -696,95 +632,43 @@ uint8 mm3_select[] = { // not const, see fixup below
 #define mm3_select4_file   0x8A06
 #define mm3_select5_file   0x8A3B
 #define mm3_select6_file   0x8B41
-const uint8 mm3c_select0[] = { CALL(mm3_select0_addr, mm3c_select_addr+1) };
-const uint8 mm3c_select1[] = { CALL(mm3_select1_addr, mm3c_select_addr+1) };
-const uint8 mm3c_select2[] = { CALL(mm3_select2_addr, mm3c_select_addr+1) };
-const uint8 mm3c_select3[] = { CALL(mm3_select3_addr, mm3c_select_addr+1) };
-const uint8 mm3c_select4[] = { CALL(mm3_select4_addr, mm3c_select_addr+1) };
-const uint8 mm3c_select5[] = { CALL(mm3_select5_addr, mm3c_select_addr+1) };
-const uint8 mm3c_select6[] = { CALL(mm3_select6_addr, mm3c_select_addr+1) };
-const uint8 mm3e_select0[] = { CALL(mm3_select0_addr, mm3e_select_addr+1) };
-const uint8 mm3e_select1[] = { CALL(mm3_select1_addr, mm3e_select_addr+1) };
-const uint8 mm3e_select2[] = { CALL(mm3_select2_addr, mm3e_select_addr+1) };
-const uint8 mm3e_select3[] = { CALL(mm3_select3_addr, mm3e_select_addr+1) };
-const uint8 mm3e_select4[] = { CALL(mm3_select4_addr, mm3e_select_addr+1) };
-const uint8 mm3e_select5[] = { CALL(mm3_select5_addr, mm3e_select_addr+1) };
-const uint8 mm3e_select6[] = { CALL(mm3_select6_addr, mm3e_select_addr+1) };
-// converts mm3_select from CGA to EGA version
-void mm3e_select_fixup()
-{
-	int offset = mm3e_select_addr - mm3c_select_addr;
-	offset_word(mm3_select, 2, -offset);
-	offset_word(mm3_select, 13, offset);
-	offset_word(mm3_select, 25, offset);
-}
+const uint8 mm3_select0[] = { CALL(mm3_select0_addr, mm3_select_addr+1) };
+const uint8 mm3_select1[] = { CALL(mm3_select1_addr, mm3_select_addr+1) };
+const uint8 mm3_select2[] = { CALL(mm3_select2_addr, mm3_select_addr+1) };
+const uint8 mm3_select3[] = { CALL(mm3_select3_addr, mm3_select_addr+1) };
+const uint8 mm3_select4[] = { CALL(mm3_select4_addr, mm3_select_addr+1) };
+const uint8 mm3_select5[] = { CALL(mm3_select5_addr, mm3_select_addr+1) };
+const uint8 mm3_select6[] = { CALL(mm3_select6_addr, mm3_select_addr+1) };
 
 // patch set
-const patch mm3c_patch[] =
+const patch mm3_patch[] =
 {
 	// slowdown
-	{ mm3c_slow_file, LENGTH(mm3_slow), mm3_slow },
-	{ mm3_slow0_file, LENGTH(mm3c_slow0), mm3c_slow0 },
+	{ mm3_slow_file, LENGTH(mm3_slow), mm3_slow },
+	{ mm3_slow0_file, LENGTH(mm3_slow0), mm3_slow0 },
 	// settings table
-	{ mm3c_table_file, LENGTH(mm3_table), mm3_table },
+	{ mm3_table_file, LENGTH(mm3_table), mm3_table },
 	{ 0x874B, 1, six }, // increasing index of last table entry 5 -> 6
 	{ 0x879A, 1, six },
 	{ 0x882D, 1, six },
-	{ 0x870D, 2, mm3c_table0 },
-	{ 0x87B5, 2, mm3c_table1 },
-	{ 0x87CF, 2, mm3c_table1 },
+	{ 0x870D, 2, mm3_table0 },
+	{ 0x87B5, 2, mm3_table1 },
+	{ 0x87CF, 2, mm3_table1 },
 	// settings finalization
-	{ mm3c_settings_file, LENGTH(mm3_settings), mm3_settings },
-	{ mm3_settings0_file, LENGTH(mm3c_settings0), mm3c_settings0 },
+	{ mm3_settings_file, LENGTH(mm3_settings), mm3_settings },
+	{ mm3_settings0_file, LENGTH(mm3_settings0), mm3_settings0 },
 	// selection screen joystick input filter
-	{ mm3c_select_file, LENGTH(mm3_select), mm3_select },
-	{ mm3_select0_file, LENGTH(mm3c_select0), mm3c_select0 },
-	{ mm3_select1_file, LENGTH(mm3c_select1), mm3c_select1 },
-	{ mm3_select2_file, LENGTH(mm3c_select2), mm3c_select2 },
-	{ mm3_select3_file, LENGTH(mm3c_select3), mm3c_select3 },
-	{ mm3_select4_file, LENGTH(mm3c_select4), mm3c_select4 },
-	{ mm3_select5_file, LENGTH(mm3c_select5), mm3c_select5 },
-	{ mm3_select6_file, LENGTH(mm3c_select6), mm3c_select6 },
+	{ mm3_select_file, LENGTH(mm3_select), mm3_select },
+	{ mm3_select0_file, LENGTH(mm3_select0), mm3_select0 },
+	{ mm3_select1_file, LENGTH(mm3_select1), mm3_select1 },
+	{ mm3_select2_file, LENGTH(mm3_select2), mm3_select2 },
+	{ mm3_select3_file, LENGTH(mm3_select3), mm3_select3 },
+	{ mm3_select4_file, LENGTH(mm3_select4), mm3_select4 },
+	{ mm3_select5_file, LENGTH(mm3_select5), mm3_select5 },
+	{ mm3_select6_file, LENGTH(mm3_select6), mm3_select6 },
 	// end
 	{0,0,NULL}
 };
-const patch mm3e_patch[] =
-{
-	// slowdown
-	{ mm3e_slow_file, LENGTH(mm3_slow), mm3_slow },
-	{ mm3_slow0_file, LENGTH(mm3e_slow0), mm3e_slow0 },
-	// settings table
-	{ mm3e_table_file, LENGTH(mm3_table), mm3_table },
-	{ 0x874B, 1, six }, // increasing index of last table entry 5 -> 6
-	{ 0x879A, 1, six },
-	{ 0x882D, 1, six },
-	{ 0x870D, 2, mm3e_table0 },
-	{ 0x87B5, 2, mm3e_table1 },
-	{ 0x87CF, 2, mm3e_table1 },
-	// settings finalization
-	{ mm3e_settings_file, LENGTH(mm3_settings), mm3_settings },
-	{ mm3_settings0_file, LENGTH(mm3e_settings0), mm3e_settings0 },
-	// selection screen joystick input filter
-	{ mm3e_select_file, LENGTH(mm3_select), mm3_select },
-	{ mm3_select0_file, LENGTH(mm3e_select0), mm3e_select0 },
-	{ mm3_select1_file, LENGTH(mm3e_select1), mm3e_select1 },
-	{ mm3_select2_file, LENGTH(mm3e_select2), mm3e_select2 },
-	{ mm3_select3_file, LENGTH(mm3e_select3), mm3e_select3 },
-	{ mm3_select4_file, LENGTH(mm3e_select4), mm3e_select4 },
-	{ mm3_select5_file, LENGTH(mm3e_select5), mm3e_select5 },
-	{ mm3_select6_file, LENGTH(mm3e_select6), mm3e_select6 },
-	// end
-	{0,0,NULL}
-};
-// convert CGA patch set to VGA
-void mm3e_patch_fixup()
-{
-	// The EGA and CGA patches have a lot of common data.
-	// To save redefinition, this routine "patches" the patch to convert.
-	mm3e_table_fixup();
-	mm3e_settings_fixup();
-	mm3e_select_fixup();
-}
 
 //
 // Common utilities and main program
@@ -903,11 +787,7 @@ int main()
 	if (crc == CRC_MM3 || TEST)
 	{
 		printf("\n");
-		result = patch_file(FILE_MM3, OUT_MM3CGA, mm3c_patch);
-		if (result) return result;
-		printf("\n");
-		mm3e_patch_fixup();
-		result = patch_file(FILE_MM3, OUT_MM3EGA, mm3e_patch);
+		result = patch_file(FILE_MM3, OUT_MM3, mm3_patch);
 		if (result) return result;
 	}
 	if (crc != CRC_MM1 && crc != CRC_MM3)

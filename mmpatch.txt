@@ -21,13 +21,10 @@ Run it under a DOS environment.
 
 A new executable will be created:
   MM1.EXE for Mega Man
-  MM3EGA.EXE/MM3CGA.EXE for Mega Man 3
+  MM3.EXE for Mega Man 3
 
 Run the new executable to play the game.
 The setup menu will have a new option to select the game speed.
-
-Mega Man 3 will have two executables, one for EGA graphics, and one for
-CGA/Tandy. The EGA version is recommended.
 
 
 Purpose
@@ -52,15 +49,17 @@ Details
 
 Mega Man receives the following changes:
 
-1. Slowdown option to limit framerate.
-2. Default setting to EGA with joystick off.
-3. Joystick routine modified to automatically adjust for CPU speed.
-4. Joystick wait screens now wait for button press rather than hold.
+1. Video synchronization to limit framerate.
+2. New setup option for speed.
+3. Default setting to EGA with joystick off.
+4. Joystick routine modified to automatically adjust for CPU speed.
+5. Joystick wait screens now wait for button press rather than hold.
 
 Mega Man 3 receives the following changes:
 
-1. Slowdown option to limit framerate.
-2. Default setting to EGA (or CGA) with joystick off.
+1. Video synchronization to limit framerate.
+2. New setup option for speed.
+2. Default setting to EGA with joystick off.
 3. Joystick wait screens now wait for button press rather than hold.
 
 Extensive information about the patches is documented in the included
