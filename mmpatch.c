@@ -423,7 +423,7 @@ const uint8 mm1_mans[] = {
 	0xC6, 0x06, WORD(0x1204), 0x00,           // mov input_bitfield, 0
 	                                          //poll_loop:
 	0x80, 0x3E, WORD(0x1149), 0x00,           // cmp joystick_enabled, 0
-	0x74, 12,                                 // jz kb_check
+	0x74, 22,                                 // jz kb_check
 	CALL(mm1_mans_addr+28,mm1_select_addr+1), // call filtered joystick poll ; wait for new press down
 	0xF6, 0x06, WORD(0x1204), 0x80,           // test input_bitfield, 80h
 	0x74, 0xEF,                               // jz poll_loop

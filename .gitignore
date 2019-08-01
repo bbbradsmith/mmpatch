@@ -6,3 +6,4 @@
 *.obj
 *.sym
 unpack.c
+mmpatch.py
