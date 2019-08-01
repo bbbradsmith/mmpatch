@@ -74,10 +74,28 @@ const uint8 six[] = { 6 };
 // Mega Man 1 patch
 //
 
+// tandy video function 0 (+12 offset, 67 bytes until function 1)
+// tandy video function 1 (154 bytes until function 2)
+// tandy video function 2 (+3 offset, max 96 bytes)
+// tandy video function 6 (+7 offset, max 314 bytes)
+// tandy video function 7 (+7 offset, max 111 bytes)
+// tandy video function 8 (+4 offset, max 269 bytes)
+
+#define mm1_slow_addr       0x219A
+#define mm1_table_addr      0x21DD
+#define mm1_settings_addr   0x2277
+#define mm1_joy_addr        0x23C0
+#define mm1_select_addr     0x24FD
+#define mm1_mans_addr       0x256F
+
+#define mm1_slow_file       0x1A08
+#define mm1_table_file      0x1A4B
+#define mm1_settings_file   0x1AE5
+#define mm1_joy_file        0x1C2E
+#define mm1_select_file     0x1D6B
+#define mm1_mans_file       0x1DDD
+
 // slowdown routine to delay a specified number of frames
-// location: unused tandy video function 0 (+12 offset, 67 bytes until function 1)
-#define mm1_slow_addr   0x219A
-#define mm1_slow_file   0x1A08
 const uint8 mm1_slow[] = {
 	0x9C,                                 // pushf
 	0x50,                                 // push ax
@@ -123,9 +141,6 @@ const uint8 mm1_slow0[] = { CALL(mm1_slow0_addr,mm1_slow_addr), 0x90, 0x90, 0x90
 // 53EDh (4C5B)
 
 // text table for a revised setup menu
-// location: unused tandy video function 1 (154 bytes until function 2)
-#define mm1_table_addr   0x21DD
-#define mm1_table_file   0x1A4B
 const uint8 mm1_table[] = {
 	// table of strings for the slowdown setting
 	0x28,0x09,1,'0',
@@ -191,12 +206,7 @@ const uint8 mm1_table1[] = { WORD(mm1_table_addr+52+72) }; // 113Dh
 
 // a routine to copy the new settings table results into the original settings table
 // and otherwise finalize the new slowdown setting
-// location: unused tandy video function 2 (+3 offset, max 96 bytes)
-#define mm1_settings_addr   0x2277
-#define mm1_settings_file   0x1AE5
-// original settings code location to redirect
-#define mm1_settings0_addr   0x50AD
-#define mm1_settings0_file   0x491B
+
 const uint8 mm1_settings[] = {
 	0x9C,                                     // pushf
 	0x50,                                     // push ax
@@ -227,6 +237,9 @@ const uint8 mm1_settings[] = {
 	0x2E, 0x80, 0x3E, WORD(0x114C), 0x01,     // cmp cs:114Ch, 1 ; sound_enabled
 	0xC3,                                     // retn
 };
+// original settings code location to redirect
+#define mm1_settings0_addr   0x50AD
+#define mm1_settings0_file   0x491B
 const uint8 mm1_settings0[] = {
 	CALL(mm1_settings0_addr,mm1_settings_addr),
 	0x90, 0x90, 0x90, // nop, nop, nop
@@ -234,9 +247,7 @@ const uint8 mm1_settings0[] = {
 
 // joystick reading replacement that works with a much wider range of computer speeds,
 // mostly based on relevant code from Mega Man 3
-// location: unused tandy video function 6 (+7 offset, max 314 bytes)
-#define mm1_joy_addr    0x23C0
-#define mm1_joy_file    0x1C2E
+
 // patch for the original poll routine
 #define mm1_joy0_addr   0x174D
 #define mm1_joy0_file   0x0FBB
@@ -360,9 +371,6 @@ const uint8 mm1_joy0[] = { JMP(mm1_joy0_addr,mm1_joy_addr+151), 0x90 };
 const uint8 mm1_joy1[] = { CALL(mm1_joy1_addr,mm1_joy_addr+82), 0x90 };
 
 // joystick fire button filter replacement for joystick poll
-// location: unused tandy video function 7 (+7 offset, max 111 bytes)
-#define mm1_select_addr   0x24FD
-#define mm1_select_file   0x1D6B
 const uint8 mm1_select[] = {
 	// filter variable storage
 	0x00,
@@ -399,6 +407,53 @@ const uint8 mm1_select1[] = { CALL(mm1_select1_addr, mm1_select_addr+1) };
 const uint8 mm1_select2[] = { CALL(mm1_select2_addr, mm1_select_addr+1) };
 const uint8 mm1_select3[] = { CALL(mm1_select3_addr, mm1_select_addr+1) };
 
+// patch to add a wait for fire/spacebar on the post stage-select screen
+// loosely based on similar wait code surrounding the "select" patches above
+const uint8 mm1_mans[] = {
+	0x9C,                                     // pushf
+	0x50,                                     // push ax
+	0x53,                                     // push bx
+	0x51,                                     // push cx
+	0x52,                                     // push dx
+	0x1E,                                     // push ds
+	0x56,                                     // push si
+	0x8C, 0xC8,                               // mov ax, cs
+	0x8E, 0xD8,                               // mov ds, cs
+	0xC6, 0x06, WORD(0x1205), 0x00,           // mov kb_readcode, 0
+	0xC6, 0x06, WORD(0x1204), 0x00,           // mov input_bitfield, 0
+	                                          //poll_loop:
+	0x80, 0x3E, WORD(0x1149), 0x00,           // cmp joystick_enabled, 0
+	0x74, 12,                                 // jz kb_check
+	CALL(mm1_mans_addr+28,mm1_select_addr+1), // call filtered joystick poll
+	0xF6, 0x06, WORD(0x1204), 0x80,           // test input_bitfield, 80h
+	0x74, 0xEF,                               // jz poll_loop
+	0xEB, 7,                                  // jump poll_end
+	                                          //kb_check:
+	0x80, 0x3E, WORD(0x1205), 0xB9,           // cmp kb_readcode, B9h ; spacebard key-up
+	0x75, 0xE6,                               // jnz poll_loop
+	                                          //poll_end:
+	0x5E,                                     // pop si
+	0x1F,                                     // pop ds
+	0x5A,                                     // pop dx
+	0x59,                                     // pop cx
+	0x5B,                                     // pop bx
+	0x58,                                     // pop ax
+	0x9D,                                     // popf
+	0xB9, 0x01, 0x00,                         // mov cx, 1
+	0xE2, 0xFE,                               // loop -2
+	0xC3,                                     // retn
+	// postcondition of replaced wait loop: cx=0, flags from a loop
+};
+// the original code just did 65536 * 12 loops to wait
+#define mm1_mans0_addr   0x4F0F
+#define mm1_mans0_file   0x477D
+const uint8 mm1_mans0[] = {
+	0x59,                                 // pop cx ; the replaced code has a pop
+	CALL(mm1_mans0_addr+1,mm1_mans_addr), // call patch
+	0x90,                                 // nop
+};
+
+// patch set
 const patch mm1_patch[] =
 {
 	// slowdown
@@ -425,6 +480,9 @@ const patch mm1_patch[] =
 	{ mm1_select1_file, LENGTH(mm1_select1), mm1_select1 },
 	{ mm1_select2_file, LENGTH(mm1_select2), mm1_select2 },
 	{ mm1_select3_file, LENGTH(mm1_select3), mm1_select3 },
+	// post stage-select screen wait for space/fire
+	{ mm1_mans_file, LENGTH(mm1_mans), mm1_mans },
+	{ mm1_mans0_file, LENGTH(mm1_mans0), mm1_mans0 },
 	// end
 	{0,0,NULL}
 };

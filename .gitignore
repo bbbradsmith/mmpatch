@@ -5,3 +5,4 @@
 *.mk1
 *.obj
 *.sym
+unpack.c
