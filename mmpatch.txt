@@ -54,6 +54,7 @@ Mega Man receives the following changes:
 3. Default setting to EGA with joystick off.
 4. Joystick routine modified to automatically adjust for CPU speed.
 5. Joystick wait screens now wait for button press rather than hold.
+6. Wait for space/fire on robot master screen after stage select.
 
 Mega Man 3 receives the following changes:
 
