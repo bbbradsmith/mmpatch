@@ -407,7 +407,7 @@ const uint8 mm1_select1[] = { CALL(mm1_select1_addr, mm1_select_addr+1) };
 const uint8 mm1_select2[] = { CALL(mm1_select2_addr, mm1_select_addr+1) };
 const uint8 mm1_select3[] = { CALL(mm1_select3_addr, mm1_select_addr+1) };
 
-// patch to add a wait for fire/spacebar on the post stage-select screen
+// patch to add a wait for fire/spacebar/enter on the post stage-select screen
 // loosely based on similar wait code surrounding the "select" patches above
 const uint8 mm1_mans[] = {
 	0x9C,                                     // pushf
@@ -431,10 +431,12 @@ const uint8 mm1_mans[] = {
 	CALL(mm1_mans_addr+38,0x173C),            // call unfiltered joystick poll ; wait for release
 	0xF6, 0x06, WORD(0x1204), 0x80,           // test input_bitfield, 80h
 	0x75, 0xF6,                               // jnz hold_loop
-	0xEB, 7,                                  // jump poll_end
+	0xEB, 14,                                 // jump poll_end
 	                                          //kb_check:
 	0x80, 0x3E, WORD(0x1205), 0xB9,           // cmp kb_readcode, B9h ; spacebard key-up
-	0x75, 0xF9,                               // jnz kb_check
+	0x74, 0x07,                               // jz poll_end
+	0x80, 0x3E, WORD(0x1205), 0x9C,           // cmp kb_readcode, 9Ch ; enter key-up
+	0x75, 0xF2,                               // jnz kb_check
 	                                          //poll_end:
 	0x5E,                                     // pop si
 	0x1F,                                     // pop ds
