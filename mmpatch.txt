@@ -6,7 +6,7 @@ A patch for Mega Man (DOS) and Mega Man 3 (DOS)
 Brad Smith, 2019
 http://rainwarrior.ca
 
-https://github.com/bbbradsmith/mmpatch
+https://www.patreon.com/posts/mega-man-dos-and-28839430
 
 
 Instructions
@@ -74,6 +74,9 @@ The MM.EXE executable is expected to have a CRC32 hash of:
 
 Links
 =====
+
+This project may be supported on patreon:
+https://www.patreon.com/posts/mega-man-dos-and-28839430
 
 The most recent release and source code are available here:
 https://github.com/bbbradsmith/mmpatch
