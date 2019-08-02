@@ -409,7 +409,7 @@ const uint8 mm1_select0[] = { CALL(mm1_select0_addr, mm1_select_addr+1) };
 const uint8 mm1_select1[] = { CALL(mm1_select1_addr, mm1_select_addr+1) };
 const uint8 mm1_select2[] = { CALL(mm1_select2_addr, mm1_select_addr+1) }; // select screen
 const uint8 mm1_select3[] = { CALL(mm1_select3_addr, mm1_select_addr+1) };
-const uint8 mm1_select4[] = { CALL(mm1_select3_addr, mm1_select_addr+1) };
+const uint8 mm1_select4[] = { CALL(mm1_select4_addr, mm1_select_addr+1) };
 
 // patch to add a wait for fire/spacebar/enter on the post stage-select screen
 // loosely based on similar wait code surrounding the "select" patches above
