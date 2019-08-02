@@ -72,6 +72,16 @@ The MM.EXE executable is expected to have a CRC32 hash of:
   06C09829 - Mega Man 3
 
 
+Version History
+===============
+
+Version 1
+- Initial release.
+
+Version 2
+- Joystick fire filter on MM1 stage select to avoid accidental Volt Man.
+
+
 Links
 =====
 

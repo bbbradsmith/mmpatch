@@ -1,6 +1,6 @@
 //
 // Mega Man (DOS) and Mega Man 3 (DOS) patch utility
-// Version 1
+// Version 2
 // Brad Smith, 2019
 // http://rainwarrior/ca
 // https://github.com/bbbradsmith/mmpatch
@@ -394,19 +394,22 @@ const uint8 mm1_select[] = {
 	0x9D,                                 // popf
 	0xC3,                                 // retn
 };
-// select screen's call to joystick poll replaced with the filtered poll routine above
+// various wait screen calls to joystick poll replaced with the filtered poll routine above
 #define mm1_select0_addr   0x49BE
 #define mm1_select1_addr   0x4A2B
-#define mm1_select2_addr   0x52CD
-#define mm1_select3_addr   0x53F5
+#define mm1_select2_addr   0x4DAD
+#define mm1_select3_addr   0x52CD
+#define mm1_select4_addr   0x53F5
 #define mm1_select0_file   0x422C
 #define mm1_select1_file   0x4299
-#define mm1_select2_file   0x4B3B
-#define mm1_select3_file   0x4C63
+#define mm1_select2_file   0x461B
+#define mm1_select3_file   0x4B3B
+#define mm1_select4_file   0x4C63
 const uint8 mm1_select0[] = { CALL(mm1_select0_addr, mm1_select_addr+1) };
 const uint8 mm1_select1[] = { CALL(mm1_select1_addr, mm1_select_addr+1) };
-const uint8 mm1_select2[] = { CALL(mm1_select2_addr, mm1_select_addr+1) };
+const uint8 mm1_select2[] = { CALL(mm1_select2_addr, mm1_select_addr+1) }; // select screen
 const uint8 mm1_select3[] = { CALL(mm1_select3_addr, mm1_select_addr+1) };
+const uint8 mm1_select4[] = { CALL(mm1_select3_addr, mm1_select_addr+1) };
 
 // patch to add a wait for fire/spacebar/enter on the post stage-select screen
 // loosely based on similar wait code surrounding the "select" patches above
@@ -698,7 +701,7 @@ const uint8 mm3_select[] = {
 #define mm3_select5_file   0x8A3B
 #define mm3_select6_file   0x8B41
 const uint8 mm3_select0[] = { CALL(mm3_select0_addr, mm3_select_addr+1) };
-const uint8 mm3_select1[] = { CALL(mm3_select1_addr, mm3_select_addr+1) };
+const uint8 mm3_select1[] = { CALL(mm3_select1_addr, mm3_select_addr+1) }; // stage select
 const uint8 mm3_select2[] = { CALL(mm3_select2_addr, mm3_select_addr+1) };
 const uint8 mm3_select3[] = { CALL(mm3_select3_addr, mm3_select_addr+1) };
 const uint8 mm3_select4[] = { CALL(mm3_select4_addr, mm3_select_addr+1) };
