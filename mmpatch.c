@@ -490,7 +490,7 @@ const patch mm1_patch[] =
 	{ mm1_select1_file, LENGTH(mm1_select1), mm1_select1 },
 	{ mm1_select2_file, LENGTH(mm1_select2), mm1_select2 },
 	{ mm1_select3_file, LENGTH(mm1_select3), mm1_select3 },
-	{ mm1_select4_file, LENGTH(mm1_select3), mm1_select4 },
+	{ mm1_select4_file, LENGTH(mm1_select4), mm1_select4 },
 	// post stage-select screen wait for space/fire
 	{ mm1_mans_file, LENGTH(mm1_mans), mm1_mans },
 	{ mm1_mans0_file, LENGTH(mm1_mans0), mm1_mans0 },
