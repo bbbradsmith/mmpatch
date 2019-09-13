@@ -2,7 +2,7 @@
 // Mega Man (DOS) and Mega Man 3 (DOS) patch utility
 // Version 2
 // Brad Smith, 2019
-// http://rainwarrior/ca
+// http://rainwarrior.ca
 // https://github.com/bbbradsmith/mmpatch
 //
 // C99 source file
